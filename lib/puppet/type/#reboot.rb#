@@ -1,0 +1,51 @@
+Puppet::Type.newmetaparam(:reboot) do
+  newvalues(:reboot,:fail)
+
+  munge do |values|
+    values = [values] unless values.is_a?(Array)
+
+    raise(ArgumentError, "Cannot specify reboot metaparameter without a catalog") unless @resource.catalog
+
+    values.each do |value|
+      if obj = @resource.catalog.resource(@resource.class.name, other)
+        unless obj.object_id == @resource.object_id
+          self.fail("#{@resource.title} can not create alias #{other}: object already exists")
+        end
+        next
+      end
+      
+      # Newschool, add it to the catalog.
+      @resource.catalog.alias(@resource, other)
+    end
+  end
+  
+end
+
+Puppet::Type.newmetaparam(:reboot_force) do
+end
+
+Puppet::Type.newtype(:reboot) do
+  newparam(:name) do
+    isnamevar
+  end
+
+  newparam(:when) do
+    munge do |value|
+      30 # seconds
+    end
+    newvalues(:now)
+  end
+
+  newparam(:message) do
+    defaultto "Puppet is rebooting the computer"
+  end
+
+  newparam(:prompt, :boolean => true) do
+    newvalues(:true, :false)
+    defaultto(false)
+  end
+
+  def refresh
+    provider.reboot
+  end
+end
